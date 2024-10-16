@@ -1,0 +1,15 @@
+import numpy as np
+import rospy
+from audio_common_msgs.msg import AudioData
+import math
+
+def audio_callback(msg):
+    audio_data = np.frombuffer(msg.data, dtype=np.int16)
+    volume = np.sqrt(np.mean(audio_data ** 2))
+    if math.isnan(volume):
+        volume = 0
+    rospy.loginfo(f"Volume: {volume}")
+
+rospy.init_node('audio_volume_calculator')
+rospy.Subscriber('/audio', AudioData, audio_callback)
+rospy.spin()
