@@ -26,23 +26,30 @@ from sound_play.libsoundplay import SoundClient
 from umoru_arm import MotionClient
 from audio_common_msgs.msg import AudioData
 import math
+import random
 from collections import deque
 from scipy.signal import lfilter
 from playsound import playsound
 import simpleaudio
+import threading
 
-global CURRENT_UMORU_STATE, INTERACTING_FLAG, FACE_FIND_FLAG, TIME_CONTROLLER_LIST, LAST_TIME
+global CURRENT_UMORU_STATE, INTERACTING_FLAG, FACE_FIND_FLAG, TIME_CONTROLLER_LIST, LAST_TIME, USE_ARM
 CURRENT_UMORU_STATE = 0
 INTERACTING_FLAG = False
 FACE_FIND_FLAG = False
 TIME_CONTROLLER_LIST = []
 LAST_TIME = None
+USE_ARM = False
 
 class startAndEndFlag():
+    """
+    interactionの始まりを規定するクラス
+    """
     def __init__(self):
         print("init start and end flag")
         # self.sub = rospy.Subscriber("/camera/face_skeleton_with_depth/output/pose", HumanSkeletonArray, self.callback, queue_size=1)
         self.sub = rospy.Subscriber("/camera/color/face_pose_estimation/output/skeleton", HumanSkeletonArray, self.callback, queue_size=1)
+        self.sub_emergency = rospy.Subscriber("/if_camera_doesnot_work", Bool, self.callback_for_emergency)
         self.pub = rospy.Publisher('/umoru_state', Int16, queue_size=1)
         self.face_appeared_time = None
         
@@ -53,17 +60,20 @@ class startAndEndFlag():
         global LAST_TIME
         pub_msg_state = Int16()
         skeletons = data.skeletons
+        # もし体験中じゃない かつ 前回の体験から10秒以上経過しているとき
         if INTERACTING_FLAG == False and (LAST_TIME == None or rospy.get_time() - LAST_TIME >= 10):
-            print("INTERACTING_FLAS is ", INTERACTING_FLAG)
-            print("FACE FIND FLAG is ", FACE_FIND_FLAG)
+            # print("INTERACTING_FLAS is ", INTERACTING_FLAG)
+            # print("FACE FIND FLAG is ", FACE_FIND_FLAG)
             if len(skeletons) == 0:
+                # 顔が見えない場合
                 FACE_FIND_FLAG = False
             elif len(skeletons) != 0:
-                # print(FACE_FIND_FLAG, self.face_appeared_time)
+                # 顔が見える場合
                 if FACE_FIND_FLAG == True:
                     if rospy.get_time() - self.face_appeared_time >= 3:
+                        # もし顔が見えてから3秒経過した場合、体験スタート
                         INTERACTING_FLAG = True
-                        print("================= found face for 3 seconds ======================")
+                        print("================= 1. Interaction Start (by camera)  ======================")
                         TIME_CONTROLLER_LIST = []
                         TIME_CONTROLLER_LIST.append(rospy.get_time())
                         pub_msg_state.data = 1
@@ -72,9 +82,26 @@ class startAndEndFlag():
                         # playsound("sounds/umoru-first-phrase.mp3")
                         # time.sleep(10)
                 else:
+                    # 顔が始めて見えたとき、その時刻を記録する
                     self.face_appeared_time = rospy.get_time()
                     FACE_FIND_FLAG = True
-                    # print("face found", self.face_appeared_time)
+
+    def callback_for_emergency(self, data):
+        # もしカメラが完全に落ちたときの処理
+        # /if_camera_doesnot_workになにかpublishすると体験スタートにできる
+        global FACE_FIND_FLAG
+        global INTERACTING_FLAG
+        global TIME_CONTROLLER_LIST
+        pub_msg_state = Int16()
+        if INTERACTING_FLAG == False and (LAST_TIME == None or rospy.get_time() - LAST_TIME >= 10):
+            INTERACTING_FLAG = True
+            TIME_CONTROLLER_LIST = []
+            TIME_CONTROLLER_LIST.append(rospy.get_time())
+            pub_msg_state.data = 1
+            self.publish(pub_msg_state)
+            FACE_FIND_FLAG = False
+            print("================= 1. Interaction Start (by force!!!)  ======================")
+
     def publish(self, data):
         self.pub.publish(data)
 
@@ -109,13 +136,13 @@ class startAndEndFlag():
 #             self.publish_state(pub_msg_state)
 #         # rospy.loginfo(f"Average Log Volume: {volume}")
         
-        
 #     def publish_state(self, data):
 #         self.pub_state.publish(data)
 
 class pressureSub():
     """
-    気圧センサによって加えるポイントを決定する
+    気圧センサによってumoru_stateを変える
+    具体的には、押された（inflatable_touchにtrueがきた）ら、次のUMORU_STATEをpublishする
     """
     def __init__(self):
         print("init pressure subscriber")
@@ -129,100 +156,165 @@ class pressureSub():
         global INTERACTING_FLAG
         pub_msg_state = Int16()
         
-        if data.data == True:
+        if INTERACTING_FLAG == True and data.data == True:
             pub_msg_state.data = min(CURRENT_UMORU_STATE + 1, 5)
-        
+            self.publish_state(pub_msg_state)
+            print("~~~~~~~~~~~~~~~ Trigger : inflatable pressure  ~~~~~~~~~~~~~~~~~~~~~")
+            
     def publish_state(self, data):
         self.pub_state.publish(data)
 
 
 class voiceSub():
+    """
+    周囲の音量によってumoru_stateを変える
+    具体的には音量が70を変えると次のstateに変化する
+    """
     def __init__(self):
         self.pub_state = rospy.Publisher('/umoru_state', Int16, queue_size=1)
         self.pub_volume = rospy.Publisher('/log_volume', Float32, queue_size=1)
         self.sub = rospy.Subscriber("/audio_volume", Float32, self.callback, queue_size=1)
         print("init voice subscriber")
         
-    def low_pass_filter(self, data, alpha=0.1):
-        return lfilter([1-alpha], [1, -alpha], data)
+    # def low_pass_filter(self, data, alpha=0.1):
+    #     return lfilter([1-alpha], [1, -alpha], data)
     
-    def calculate_rms(self, audio_data):
-        filtered_data = self.low_pass_filter(audio_data)
-        rms = np.sqrt(np.mean(np.square(filtered_data)))
-        return rms
+    # def calculate_rms(self, audio_data):
+    #     filtered_data = self.low_pass_filter(audio_data)
+    #     rms = np.sqrt(np.mean(np.square(filtered_data)))
+    #     return rms
 
     def callback(self, data):
         pub_msg_state = Int16()
         pub_msg_volume = Float32()
-        print("in callback")
         rospy.sleep(0.1)
-        print(f"Log Volume: {data.data}")
         volume = data.data
+        # if INTERACTING_FLAG == True:
+        #     if volume < 50:
+        #         pub_msg_state.data = 1
+        #     elif volume >= 50 and volume < 75:
+        #         pub_msg_state.data = 2
+        #     elif volume >= 75 and volume < 90:
+        #         pub_msg_state.data = 3
+        #     elif volume >= 90:
+        #         pub_msg_state.data = 4
+        #     self.publish_state(pub_msg_state)
         if INTERACTING_FLAG == True:
-            if volume < 50:
-                pub_msg_state.data = 1
-            elif volume >= 50 and volume < 75:
-                pub_msg_state.data = 2
-            elif volume >= 75 and volume < 90:
-                pub_msg_state.data = 3
-            elif volume >= 90:
-                pub_msg_state.data = 4
-            self.publish_state(pub_msg_state)
-
+            if volume > 70:
+                pub_msg_state.data = min(CURRENT_UMORU_STATE + 1, 5)
+                self.publish_state(pub_msg_state)
+                print("~~~~~~~~~~~~~~~ Trigger : audio volume ~~~~~~~~~~~~~~~~~~~~~")
+        
     def publish_state(self, data):
         self.pub_state.publish(data)
     
-    def publish_volume(self, data):
-        self.pub_volume.publish(data)
+    # def publish_volume(self, data):
+    #     self.pub_volume.publish(data)
 
 class timeController():
     """
     時間によって、stateを変える
     """
     def __init__(self):
-        # self.pub_demo_state = rospy.Publisher("/demo_status", Bool, queue_size=1)
         self.pub = rospy.Publisher('/umoru_state', Int16, queue_size=1)
         self.rate = rospy.Rate(10)  # 1Hzでpublishする設定
         self.current_time = rospy.get_time()
-        # time.sleep(1)
 
     def spin(self):
         while not rospy.is_shutdown():
             self.check_and_publish_state()
             self.rate.sleep()
-            print("TIME_CONTROLLER_LIST = ", TIME_CONTROLLER_LIST)
-            print("INTERACTING_FLAG = ", INTERACTING_FLAG)
-            print("CURRENT_UMORU_STATE = ", CURRENT_UMORU_STATE)
+            # print("TIME_CONTROLLER_LIST = ", TIME_CONTROLLER_LIST)
+            # # print("INTERACTING_FLAG = ", INTERACTING_FLAG)
+            # print("CURRENT_UMORU_STATE = ", CURRENT_UMORU_STATE)
 
     def check_and_publish_state(self):
         global INTERACTING_FLAG
         global TIME_CONTROLLER_LIST
         global LAST_TIME
+        global PUBLISHED_TIME_OVER
         pub_msg_state = Int16()
         pub_msg_demo_state = Bool()
+        # もしstateが1, 2, 3のいずれかの場合は10秒以上はそのstateにとどまる
         if CURRENT_UMORU_STATE in [1, 2, 3]:
             if rospy.get_time() - TIME_CONTROLLER_LIST[-1] >= 10:
                 pub_msg_state.data = CURRENT_UMORU_STATE + 1
+                print("~~~~~~~~~~~~~~~ Trigger : Time Over A  ~~~~~~~~~~~~~~~~~~~~~")
                 self.publish_state(pub_msg_state)
+        # もしstateが4の場合は20秒以上はそのstateにとどまる
         elif CURRENT_UMORU_STATE == 4:
             if rospy.get_time() - TIME_CONTROLLER_LIST[-1] >= 20:
                 pub_msg_state.data = 5
                 self.publish_state(pub_msg_state)
+                print("~~~~~~~~~~~~~~~ Trigger : Time Over B ~~~~~~~~~~~~~~~~~~~~~")
+        # もしstateが5の場合は20秒以上はそのstateにとどまる
         elif CURRENT_UMORU_STATE == 5:
-            # if rospy.get_time() - TIME_CONTROLLER_LIST[-1] >= 20:
             if len(TIME_CONTROLLER_LIST) == 0 or rospy.get_time() - TIME_CONTROLLER_LIST[-1] >= 20:
                 pub_msg_state.data = 0
                 pub_msg_demo_state.data = False
                 self.publish_state(pub_msg_state)
-                # self.publish_demo_state(pub_msg_demo_state)
                 LAST_TIME = rospy.get_time()
                 TIME_CONTROLLER_LIST = []
                 INTERACTING_FLAG = False
+                print("~~~~~~~~~~~~~~~ Trigger : Time Over C ~~~~~~~~~~~~~~~~~~~~~")
     def publish_state(self, data):
         self.pub.publish(data)
 
-    # def publish_demo_state(self, data):
-    #     self.pub_demo_state.publish(data)
+# class timeController():
+#     """
+#     時間によって、stateを変える
+#     """
+#     def __init__(self):
+#         self.pub = rospy.Publisher('/umoru_state', Int16, queue_size=1)
+#         self.rate = rospy.Rate(10)  # 1Hzでpublishする設定
+#         self.current_time = rospy.get_time()
+#         self.previous_state = None  # 前回の状態を追跡
+
+#     def spin(self):
+#         while not rospy.is_shutdown():
+#             self.check_and_publish_state()
+#             self.rate.sleep()
+
+#     def check_and_publish_state(self):
+#         global INTERACTING_FLAG
+#         global TIME_CONTROLLER_LIST
+#         global LAST_TIME
+#         pub_msg_state = Int16()
+#         pub_msg_demo_state = Bool()
+        
+#         # 状態を変更するためのフラグ
+#         state_changed = False  
+
+#         if CURRENT_UMORU_STATE in [1, 2, 3]:
+#             if rospy.get_time() - TIME_CONTROLLER_LIST[-1] >= 10:
+#                 pub_msg_state.data = CURRENT_UMORU_STATE + 1
+#                 state_changed = True
+#                 TIME_CONTROLLER_LIST.append(rospy.get_time())
+                
+#         elif CURRENT_UMORU_STATE == 4:
+#             if rospy.get_time() - TIME_CONTROLLER_LIST[-1] >= 20:
+#                 pub_msg_state.data = 5
+#                 state_changed = True
+#                 TIME_CONTROLLER_LIST.append(rospy.get_time())
+                
+#         elif CURRENT_UMORU_STATE == 5:
+#             if len(TIME_CONTROLLER_LIST) == 0 or rospy.get_time() - TIME_CONTROLLER_LIST[-1] >= 20:
+#                 pub_msg_state.data = 0
+#                 pub_msg_demo_state.data = False
+#                 state_changed = True
+#                 TIME_CONTROLLER_LIST = []
+#                 INTERACTING_FLAG = False
+#                 LAST_TIME = rospy.get_time()
+        
+#         # 状態が変わり、前回の状態と異なる場合のみpublishする
+#         if state_changed and pub_msg_state.data != self.previous_state:
+#             self.previous_state = pub_msg_state.data  # 状態を更新
+#             self.publish_state(pub_msg_state)
+#             print(f"State updated to {pub_msg_state.data}")
+        
+#     def publish_state(self, data):
+#         self.pub.publish(data)
+
 
 class umoruStateController():
     def __init__(self):
@@ -230,9 +322,12 @@ class umoruStateController():
         self.pub_heart_pulse = rospy.Publisher("/pulse_time", Float32, queue_size=1)
         self.pub_eye_status = rospy.Publisher("/eye_status", UInt16, queue_size=1)
         self.pub_demo_status = rospy.Publisher("/demo_status", Bool, queue_size=1)
-        self.sub = self.sub = rospy.Subscriber("/umoru_state", Int16, self.callback, queue_size=1)
+        self.sub = rospy.Subscriber("/umoru_state", Int16, self.callback, queue_size=1)
         print("init umoru state controller")
         
+    def play_sound_async(self, file_path):
+        threading.Thread(target=playsound, args=(file_path,)).start()
+    
     def callback(self, data):
         pub_msg_heart_pulse = Float32()
         pub_msg_heart_color = Float32MultiArray()
@@ -240,8 +335,8 @@ class umoruStateController():
         pub_msg_demo_status = Bool()
         global CURRENT_UMORU_STATE
         global TIME_CONTROLLER_LIST
+        global USE_ARM
         # print("in callback")
-        time_to_sleep = 0
         
         if CURRENT_UMORU_STATE < int(data.data) or (CURRENT_UMORU_STATE == 5 and int(data.data) == 0):
             CURRENT_UMORU_STATE = int(data.data)
@@ -250,7 +345,7 @@ class umoruStateController():
                 pub_msg_heart_color.data = [0.01, 0.01, 0.01]
                 pub_msg_eye_status.data = 3
                 pub_msg_demo_status.data = 0
-                print("state = 0")
+                print("============== state = 0 (interaction was reset)  ===================")
             elif CURRENT_UMORU_STATE == 1:
                 CURRENT_UMORU_STATE = 1
                 pub_msg_heart_pulse.data = 2.0
@@ -258,52 +353,60 @@ class umoruStateController():
                 pub_msg_eye_status.data = 3
                 pub_msg_demo_status.data = 0
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
-                playsound("sounds/umoru-first-phrase.mp3")
+                self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-first-phrase.mp3")
                 time_to_sleep = 10
-                print("state = 1")
+                print("=============== state = 1 (heart appeared) ========================")
             elif CURRENT_UMORU_STATE == 2 and 5 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]:
                 CURRENT_UMORU_STATE = 2
-                pub_msg_heart_pulse.data = 1.0
+                pub_msg_heart_pulse.data = 1.5
                 pub_msg_heart_color.data = [0.9,0.5,0.8]
                 pub_msg_eye_status.data = 3
                 pub_msg_demo_status.data = 0
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
-                playsound(random.choice(["sounds/umoru-yobimashitaka.wav", "sounds/umoru-bikkuri.wav", "sounds/umoru-iinioi.wav"]))
-                print("state = 2")
+                self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-iinioi.wav"]))
+                print("=============== state = 2 ========================")
             elif (CURRENT_UMORU_STATE == 3 and 5 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]):
                 CURRENT_UMORU_STATE = 3
-                pub_msg_heart_pulse.data = 0.7
+                pub_msg_heart_pulse.data = 1.0
                 pub_msg_heart_color.data = [0.9,0.3,0.5]
                 pub_msg_eye_status.data = 1
                 pub_msg_demo_status.data = 1
-                playsound(random.choice(["sounds/umoru-nukumori.wav", "sounds/umoru-kodou.wav", "sounds/umoru-kokyu-fukkatsu.wav"]))
+                self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-nukumori.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-kodou.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-kokyu-fukkatsu.wav"]))
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
-                print("state = 3")
+                print("=============== state = 3 ========================")
+                print("=============== 呼吸スタート =====================")
             elif (CURRENT_UMORU_STATE == 4 and 5 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]):
+                print("aaaaaaaaaaaaaaaaaaaaaaa")
                 CURRENT_UMORU_STATE = 4
-                pub_msg_heart_pulse.data = 0.5
+                pub_msg_heart_pulse.data = 0.8
                 pub_msg_heart_color.data = [0.9,0,0]
                 pub_msg_demo_status.data = 1
                 pub_msg_eye_status.data = 1
-                arm_client.reset_pose()
-                arm_client.hug()
-                playsound("sounds/umoru-hug-fukkatsu.wav")
+                if USE_ARM == True:
+                    arm_client.reset_pose()
+                    arm_client.hug()
+                self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-hug-fukkatsu.wav")
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
-                print("state = 4")
+                print("=============== state = 4 ========================")
+                print("=============== ハグスタート ======================")
             elif CURRENT_UMORU_STATE == 5 and 5 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]:
                 CURRENT_UMORU_STATE = 5
-                playsound(random.choice(["sounds/umoru-thankyou-pattern1.wav", "sounds/umoru-thankyou-pattern2.wav"]))
-                arm_client.reset_pose()
-                arm_client.init_pose()
+                self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-thankyou-pattern1.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-thankyou-pattern2.wav"]))
+                if USE_ARM == True:
+                    arm_client.reset_pose()
+                    arm_client.init_pose()
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
                 pub_msg_eye_status.data = 1
                 pub_msg_demo_status.data = 1
-                print("state =======================================5==========================")
+                pub_msg_heart_pulse.data = 0.8
+                print("=============== state = 5 ========================")
+                print("=============== ハグ終了 ======================")
+
             self.publish_demo_status(pub_msg_demo_status)
-            self.publish_heart_pulse(pub_msg_heart_pulse)
+            if pub_msg_heart_pulse.data != 0:
+                self.publish_heart_pulse(pub_msg_heart_pulse)
             self.publish_heart_color(pub_msg_heart_color)
             self.publish_eye_status(pub_msg_eye_status)
-            time.sleep(time_to_sleep)
             
     def publish_heart_pulse(self, data):
         self.pub_heart_pulse.publish(data)
@@ -320,12 +423,10 @@ class umoruStateController():
 
 
 if __name__ == '__main__':
-    print("hoge")
-    rospy.init_node("test_node")
-    arm_client = MotionClient("both")
-    # arm_client = MotionClient("rarm")
-    # arm_client = MotionClient("right")
-    arm_client.init_pose()
+    rospy.init_node("umoru_main")
+    if USE_ARM == True:
+        arm_client = MotionClient("both")
+        arm_client.init_pose()
     node0 = pressureSub()
     node1 = voiceSub()
     node2 = umoruStateController()
