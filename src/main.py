@@ -237,7 +237,7 @@ class timeController():
         pub_msg_demo_state = Bool()
         # もしstateが1, 2, 3のいずれかの場合は10秒以上はそのstateにとどまる
         if CURRENT_UMORU_STATE in [1, 2, 3]:
-            if rospy.get_time() - TIME_CONTROLLER_LIST[-1] >= 10:
+            if rospy.get_time() - TIME_CONTROLLER_LIST[-1] >= 20:
                 pub_msg_state.data = CURRENT_UMORU_STATE + 1
                 print("~~~~~~~~~~~~~~~ Trigger : Time Over A  ~~~~~~~~~~~~~~~~~~~~~")
                 self.publish_state(pub_msg_state)
@@ -356,18 +356,18 @@ class umoruStateController():
                 self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-first-phrase.mp3")
                 time_to_sleep = 10
                 print("=============== state = 1 (heart appeared) ========================")
-            elif CURRENT_UMORU_STATE == 2 and 5 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]:
+            elif CURRENT_UMORU_STATE == 2 and 10 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]:
                 CURRENT_UMORU_STATE = 2
-                pub_msg_heart_pulse.data = 1.5
+                pub_msg_heart_pulse.data = 1
                 pub_msg_heart_color.data = [0.9,0.5,0.8]
                 pub_msg_eye_status.data = 3
                 pub_msg_demo_status.data = 0
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
                 self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-iinioi.wav"]))
                 print("=============== state = 2 ========================")
-            elif (CURRENT_UMORU_STATE == 3 and 5 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]):
+            elif (CURRENT_UMORU_STATE == 3 and 10 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]):
                 CURRENT_UMORU_STATE = 3
-                pub_msg_heart_pulse.data = 1.0
+                pub_msg_heart_pulse.data = 0.8
                 pub_msg_heart_color.data = [0.9,0.3,0.5]
                 pub_msg_eye_status.data = 1
                 pub_msg_demo_status.data = 1
@@ -375,10 +375,10 @@ class umoruStateController():
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
                 print("=============== state = 3 ========================")
                 print("=============== 呼吸スタート =====================")
-            elif (CURRENT_UMORU_STATE == 4 and 5 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]):
+            elif (CURRENT_UMORU_STATE == 4 and 10 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]):
                 print("aaaaaaaaaaaaaaaaaaaaaaa")
                 CURRENT_UMORU_STATE = 4
-                pub_msg_heart_pulse.data = 0.8
+                pub_msg_heart_pulse.data = 0.6
                 pub_msg_heart_color.data = [0.9,0,0]
                 pub_msg_demo_status.data = 1
                 pub_msg_eye_status.data = 1
@@ -389,7 +389,7 @@ class umoruStateController():
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
                 print("=============== state = 4 ========================")
                 print("=============== ハグスタート ======================")
-            elif CURRENT_UMORU_STATE == 5 and 5 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]:
+            elif CURRENT_UMORU_STATE == 5 and 10 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]:
                 CURRENT_UMORU_STATE = 5
                 self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-thankyou-pattern1.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-thankyou-pattern2.wav"]))
                 if USE_ARM == True:
@@ -398,13 +398,14 @@ class umoruStateController():
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
                 pub_msg_eye_status.data = 1
                 pub_msg_demo_status.data = 1
-                pub_msg_heart_pulse.data = 0.8
+                pub_msg_heart_pulse.data = 0.4
                 print("=============== state = 5 ========================")
                 print("=============== ハグ終了 ======================")
 
             self.publish_demo_status(pub_msg_demo_status)
             if pub_msg_heart_pulse.data != 0:
                 self.publish_heart_pulse(pub_msg_heart_pulse)
+                time.sleep(0.1)
             self.publish_heart_color(pub_msg_heart_color)
             self.publish_eye_status(pub_msg_eye_status)
             
