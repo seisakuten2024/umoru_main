@@ -1,0 +1,13 @@
+<launch>
+    <!-- カメラ関連のlaunchファイル -->
+    <include file="$(find realsense2_camera)/launch/rs_rgbd.launch" />
+    <include file="$(find stereo_image_sandbox)/launch/face_recognition_d405.launch">
+        <arg name="gui" value="false"/>
+    </include>
+
+    <!-- 音声認識のlaunchファイル -->
+    <include file="$(find ros_speech_recognition)/launch/speech_recognition.launch" />
+
+    <!-- pythonスクリプト: audio_common_plot_test2.py -->
+    <node name="audio_common_volume" pkg="umoru_main" type="audio_common_plot_test2.py" output="screen" cwd="ROS_HOME"/>
+</launch>

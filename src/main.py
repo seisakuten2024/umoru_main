@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.8
 import rospy
 import time
 # import module
@@ -28,6 +29,7 @@ import math
 from collections import deque
 from scipy.signal import lfilter
 from playsound import playsound
+import simpleaudio
 
 global CURRENT_UMORU_STATE, INTERACTING_FLAG, FACE_FIND_FLAG, TIME_CONTROLLER_LIST, LAST_TIME
 CURRENT_UMORU_STATE = 0
@@ -35,7 +37,6 @@ INTERACTING_FLAG = False
 FACE_FIND_FLAG = False
 TIME_CONTROLLER_LIST = []
 LAST_TIME = None
-
 
 class startAndEndFlag():
     def __init__(self):
@@ -68,8 +69,8 @@ class startAndEndFlag():
                         pub_msg_state.data = 1
                         self.publish(pub_msg_state)
                         FACE_FIND_FLAG = False
-                        playsound("sounds/umoru-first-phrase.mp3")
-                        time.sleep(10)
+                        # playsound("sounds/umoru-first-phrase.mp3")
+                        # time.sleep(10)
                 else:
                     self.face_appeared_time = rospy.get_time()
                     FACE_FIND_FLAG = True
@@ -240,7 +241,8 @@ class umoruStateController():
         global CURRENT_UMORU_STATE
         global TIME_CONTROLLER_LIST
         # print("in callback")
-
+        time_to_sleep = 0
+        
         if CURRENT_UMORU_STATE < int(data.data) or (CURRENT_UMORU_STATE == 5 and int(data.data) == 0):
             CURRENT_UMORU_STATE = int(data.data)
             if CURRENT_UMORU_STATE == 0:
@@ -256,6 +258,8 @@ class umoruStateController():
                 pub_msg_eye_status.data = 3
                 pub_msg_demo_status.data = 0
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
+                playsound("sounds/umoru-first-phrase.mp3")
+                time_to_sleep = 10
                 print("state = 1")
             elif CURRENT_UMORU_STATE == 2 and 5 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]:
                 CURRENT_UMORU_STATE = 2
@@ -264,6 +268,7 @@ class umoruStateController():
                 pub_msg_eye_status.data = 3
                 pub_msg_demo_status.data = 0
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
+                # playsound(
                 print("state = 2")
             elif (CURRENT_UMORU_STATE == 3 and 5 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]):
                 CURRENT_UMORU_STATE = 3
@@ -295,6 +300,7 @@ class umoruStateController():
             self.publish_heart_pulse(pub_msg_heart_pulse)
             self.publish_heart_color(pub_msg_heart_color)
             self.publish_eye_status(pub_msg_eye_status)
+            time.sleep(time_to_sleep)
             
     def publish_heart_pulse(self, data):
         self.pub_heart_pulse.publish(data)

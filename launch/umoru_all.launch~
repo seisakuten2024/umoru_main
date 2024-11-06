@@ -1,0 +1,36 @@
+<launch>
+    <!-- カメラ関連のlaunchファイル -->
+    <include file="$(find realsense2_camera)/launch/rs_rgbd.launch" />
+    <include file="$(find stereo_image_sandbox)/launch/face_recognition_d405.launch">
+        <arg name="gui" value="false"/>
+    </include>
+
+    <!-- 音声認識のlaunchファイル -->
+    <include file="$(find ros_speech_recognition)/launch/speech_recognition.launch" />
+
+    <!-- ハートのrosrunコマンド -->
+    <node name="heart_node" pkg="heart" type="heart_node" output="screen"/>
+    
+    <!-- 目のrosrunコマンド -->
+    <node name="serial_node_right_eye" pkg="rosserial_python" type="serial_node.py">
+      <param name="port" value="/dev/ttyACM-righteye"/>
+      <param name="~baud" value="57600"/>
+    </node>
+
+    <node name="serial_node_left_eye" pkg="rosserial_python" type="serial_node.py">
+      <param name="port" value="/dev/ttyACM-lefteye"/>
+      <param name="~baud" value="57600"/>
+    </node>
+
+    <!-- インフレータブル arduinoのrosrunコマンド -->
+    <node name="serial_node_arduino" pkg="rosserial_python" type="serial_node.py" output="screen">
+      <param name="port" value="/dev/ttyACM-arduino"/>
+      <param name="~baud" value="57600"/>
+    </node>
+
+    <!-- pythonスクリプト: audio_common_plot_test2.py -->
+    <node name="audio_common_volume" pkg="umoru_main" type="audio_common_plot_test2.py" output="screen" cwd="ROS_HOME"/>
+
+    <!-- pythonスクリプト: main.py -->
+    <node name="main_script" pkg="umoru_main" type="main.py" output="screen" cwd="ROS_HOME"/>
+</launch>

@@ -1,0 +1,6 @@
+<launch>
+<!-- ハートのrosrunコマンド -->
+    <node name="heart_node" pkg="heart" type="heart_node" output="screen"/>
+<!-- pythonスクリプト: main.py -->
+    <node name="main_script" pkg="umoru_main" type="main.py" output="screen" cwd="ROS_HOME"/>
+</launch>
