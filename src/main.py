@@ -39,7 +39,7 @@ INTERACTING_FLAG = False
 FACE_FIND_FLAG = False
 TIME_CONTROLLER_LIST = []
 LAST_TIME = None
-USE_ARM = False
+USE_ARM = True
 
 class startAndEndFlag():
     """
@@ -159,7 +159,7 @@ class pressureSub():
         if INTERACTING_FLAG == True and data.data == True:
             pub_msg_state.data = min(CURRENT_UMORU_STATE + 1, 5)
             self.publish_state(pub_msg_state)
-            print("~~~~~~~~~~~~~~~ Trigger : inflatable pressure  ~~~~~~~~~~~~~~~~~~~~~")
+            # print("~~~~~~~~~~~~~~~ Trigger : inflatable pressure  ~~~~~~~~~~~~~~~~~~~~~")
             
     def publish_state(self, data):
         self.pub_state.publish(data)
@@ -203,7 +203,6 @@ class voiceSub():
             if volume > 70:
                 pub_msg_state.data = min(CURRENT_UMORU_STATE + 1, 5)
                 self.publish_state(pub_msg_state)
-                print("~~~~~~~~~~~~~~~ Trigger : audio volume ~~~~~~~~~~~~~~~~~~~~~")
         
     def publish_state(self, data):
         self.pub_state.publish(data)
@@ -224,9 +223,9 @@ class timeController():
         while not rospy.is_shutdown():
             self.check_and_publish_state()
             self.rate.sleep()
-            # print("TIME_CONTROLLER_LIST = ", TIME_CONTROLLER_LIST)
+            print("TIME_CONTROLLER_LIST = ", TIME_CONTROLLER_LIST)
             # # print("INTERACTING_FLAG = ", INTERACTING_FLAG)
-            # print("CURRENT_UMORU_STATE = ", CURRENT_UMORU_STATE)
+            print("CURRENT_UMORU_STATE = ", CURRENT_UMORU_STATE)
 
     def check_and_publish_state(self):
         global INTERACTING_FLAG
@@ -239,15 +238,15 @@ class timeController():
         if CURRENT_UMORU_STATE in [1, 2, 3]:
             if rospy.get_time() - TIME_CONTROLLER_LIST[-1] >= 20:
                 pub_msg_state.data = CURRENT_UMORU_STATE + 1
-                print("~~~~~~~~~~~~~~~ Trigger : Time Over A  ~~~~~~~~~~~~~~~~~~~~~")
+                 #print("~~~~~~~~~~~~~~~ Trigger : Time Over A  ~~~~~~~~~~~~~~~~~~~~~")
                 self.publish_state(pub_msg_state)
         # もしstateが4の場合は20秒以上はそのstateにとどまる
         elif CURRENT_UMORU_STATE == 4:
             if rospy.get_time() - TIME_CONTROLLER_LIST[-1] >= 20:
                 pub_msg_state.data = 5
                 self.publish_state(pub_msg_state)
-                print("~~~~~~~~~~~~~~~ Trigger : Time Over B ~~~~~~~~~~~~~~~~~~~~~")
-        # もしstateが5の場合は20秒以上はそのstateにとどまる
+                # print("~~~~~~~~~~~~~~~ Trigger : Time Over B ~~~~~~~~~~~~~~~~~~~~~")
+            # もしstateが5の場合は20秒以上はそのstateにとどまる
         elif CURRENT_UMORU_STATE == 5:
             if len(TIME_CONTROLLER_LIST) == 0 or rospy.get_time() - TIME_CONTROLLER_LIST[-1] >= 20:
                 pub_msg_state.data = 0
@@ -256,7 +255,7 @@ class timeController():
                 LAST_TIME = rospy.get_time()
                 TIME_CONTROLLER_LIST = []
                 INTERACTING_FLAG = False
-                print("~~~~~~~~~~~~~~~ Trigger : Time Over C ~~~~~~~~~~~~~~~~~~~~~")
+                # print("~~~~~~~~~~~~~~~ Trigger : Time Over C ~~~~~~~~~~~~~~~~~~~~~")
     def publish_state(self, data):
         self.pub.publish(data)
 
@@ -382,11 +381,11 @@ class umoruStateController():
                 pub_msg_heart_color.data = [0.9,0,0]
                 pub_msg_demo_status.data = 1
                 pub_msg_eye_status.data = 1
+                TIME_CONTROLLER_LIST.append(rospy.get_time())
                 if USE_ARM == True:
                     arm_client.reset_pose()
                     arm_client.hug()
                 self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-hug-fukkatsu.wav")
-                TIME_CONTROLLER_LIST.append(rospy.get_time())
                 print("=============== state = 4 ========================")
                 print("=============== ハグスタート ======================")
             elif CURRENT_UMORU_STATE == 5 and 10 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]:
