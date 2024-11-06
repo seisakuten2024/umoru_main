@@ -27,7 +27,7 @@ from audio_common_msgs.msg import AudioData
 import math
 from collections import deque
 from scipy.signal import lfilter
-
+from playsound import playsound
 
 global CURRENT_UMORU_STATE, INTERACTING_FLAG, FACE_FIND_FLAG, TIME_CONTROLLER_LIST, LAST_TIME
 CURRENT_UMORU_STATE = 0
@@ -68,6 +68,8 @@ class startAndEndFlag():
                         pub_msg_state.data = 1
                         self.publish(pub_msg_state)
                         FACE_FIND_FLAG = False
+                        playsound("sounds/umoru-first-phrase.mp3")
+                        time.sleep(10)
                 else:
                     self.face_appeared_time = rospy.get_time()
                     FACE_FIND_FLAG = True
