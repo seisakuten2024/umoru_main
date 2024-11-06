@@ -182,6 +182,14 @@ class voiceSub():
         self.pub_volume = rospy.Publisher('/log_volume', Float32, queue_size=1)
         self.sub = rospy.Subscriber("/audio_volume", Float32, self.callback, queue_size=1)
         print("init voice subscriber")
+        
+    # def low_pass_filter(self, data, alpha=0.1):
+    #     return lfilter([1-alpha], [1, -alpha], data)
+    
+    # def calculate_rms(self, audio_data):
+    #     filtered_data = self.low_pass_filter(audio_data)
+    #     rms = np.sqrt(np.mean(np.square(filtered_data)))
+    #     return rms
 
     def callback(self, data):
         pub_msg_state = Int16()
@@ -342,14 +350,18 @@ class umoruStateController():
                 pub_msg_heart_pulse.data = 10
                 pub_msg_heart_color.data = [0.01, 0.01, 0.01]
                 pub_msg_eye_status.data = 3
-                pub_msg_demo_status.data = 0
+                pub_msg_demo_status.data = false
+                self.publish_heart_pulse(pub_msg_heart_pulse)
+                self.publish_heart_color(pub_msg_heart_color)
+                self.publish_eye_status(pub_msg_eye_status)
+                self.publish_demo_status(pub_msg_demo_status)
                 print("============== state = 0 (interaction was reset)  ===================")
             elif CURRENT_UMORU_STATE == 1:
                 CURRENT_UMORU_STATE = 1
                 pub_msg_heart_pulse.data = 2.0
                 pub_msg_heart_color.data = [0.9,0.9,0.9]
                 pub_msg_eye_status.data = 3
-                pub_msg_demo_status.data = 0
+                pub_msg_demo_status.data = false
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
                 self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-first-phrase.wav")
                 time_to_sleep = 10
@@ -399,6 +411,11 @@ class umoruStateController():
                 pub_msg_heart_pulse.data = 0.4
                 print("=============== state = 5 ========================")
                 print("=============== ハグ終了 ======================")
+                # 最初の状態にリセット
+                pub_msg_state = Int16()
+                pub_msg_state.data = 0
+                self.publish_state(pub_msg_state)
+
 
             self.publish_demo_status(pub_msg_demo_status)
             if pub_msg_heart_pulse.data != 0:

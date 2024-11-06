@@ -182,6 +182,14 @@ class voiceSub():
         self.pub_volume = rospy.Publisher('/log_volume', Float32, queue_size=1)
         self.sub = rospy.Subscriber("/audio_volume", Float32, self.callback, queue_size=1)
         print("init voice subscriber")
+        
+    # def low_pass_filter(self, data, alpha=0.1):
+    #     return lfilter([1-alpha], [1, -alpha], data)
+    
+    # def calculate_rms(self, audio_data):
+    #     filtered_data = self.low_pass_filter(audio_data)
+    #     rms = np.sqrt(np.mean(np.square(filtered_data)))
+    #     return rms
 
     def callback(self, data):
         pub_msg_state = Int16()
