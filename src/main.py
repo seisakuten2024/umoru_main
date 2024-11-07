@@ -427,9 +427,15 @@ class umoruStateController():
                 pub_msg_eye_status.data = 3
                 pub_msg_demo_status.data = 0
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
-                self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav",
-                                                     "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav",
-                                                     "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-iinioi.wav"]))
+                if change_trigger == "inflatable":
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-nukumori.wav")
+                elif change_trigger == "voice":
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav")
+                elif change_trigger == "time":
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-iinioi.wav")
+                # self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav",
+                #                                      "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav",
+                #                                      "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-iinioi.wav"]))
                 print("=============== state = 2 (heart turned pink) ========================")
             elif CURRENT_UMORU_STATE == 3:
                 pub_msg_heart_pulse.data = 0.8
@@ -437,9 +443,7 @@ class umoruStateController():
                 pub_msg_eye_status.data = 1
                 pub_msg_demo_status.data = 1
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
-                self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-nukumori.wav",
-                                                     "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-kodou.wav",
-                                                     "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-kokyu-fukkatsu.wav"]))
+                self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-kokyu-fukkatsu.wav")
                 print("=============== state = 3 (breathing start)  ========================")
             elif CURRENT_UMORU_STATE == 4:
                 pub_msg_heart_pulse.data = 0.6
