@@ -1,13 +1,48 @@
 <launch>
-    <!-- カメラ関連のlaunchファイル -->
-    <include file="$(find realsense2_camera)/launch/rs_rgbd.launch" />
-    <include file="$(find stereo_image_sandbox)/launch/face_recognition_d405.launch">
-        <arg name="gui" value="false"/>
-    </include>
+  <!-- カメラ関連のlaunchファイル -->
+  <!-- <include file="$(find realsense2_camera)/launch/rs_rgbd.launch" /> -->
+  <arg name="INPUT_CLOUD" value="/camera/depth/color/points" />    
 
-    <!-- 音声認識のlaunchファイル -->
-    <include file="$(find ros_speech_recognition)/launch/speech_recognition.launch" />
+  <include file="$(find stereo_image_sandbox)/launch/face_recognition_d405.launch">
+    <arg name="gui" value="false"/>
+  </include>
 
-    <!-- pythonスクリプト: audio_common_plot_test2.py -->
-    <node name="audio_common_volume" pkg="umoru_main" type="audio_common_plot_test2.py" output="screen" cwd="ROS_HOME"/>
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch" >
+    <arg name="enable_infra1" value="false" />
+    <arg name="enable_infra2" value="false" />
+    <arg name="enable_depth" value="true" />
+    <arg name="align_depth" value="true" />
+    <arg name="enable_pointcloud" value="true" />
+  </include>
+
+  <node name="attention_clipper"
+        pkg="nodelet" type="nodelet"
+        args="standalone jsk_pcl/AttentionClipper">
+    <remap from="~input/points" to="$(arg INPUT_CLOUD)" />
+    <rosparam>
+      initial_pos: [0.0, 0.0, 0.4]
+      initial_rot: [0, 0, 0]
+      dimension_x: 0.1
+      dimension_y: 0.1
+      dimension_z: 0.1
+      frame_id: camera_color_optical_frame
+    </rosparam>
+  </node>
+
+  <node name="extract_indices"
+        pkg="jsk_pcl_ros" type="extract_indices">
+    <remap from="~input" to="$(arg INPUT_CLOUD)" />
+    <remap from="~indices" to="attention_clipper/output/point_indices" />
+  </node>    
+
+  <node name="check_face_box"
+        pkg="umoru_main" type="check_face_box.py">
+  </node>    
+    
+
+  <!-- 音声認識のlaunchファイル -->
+  <include file="$(find ros_speech_recognition)/launch/speech_recognition.launch" />
+
+  <!-- pythonスクリプト: audio_common_plot_test2.py -->
+  <node name="audio_common_volume" pkg="umoru_main" type="audio_common_plot_test2.py" output="screen" cwd="ROS_HOME"/>
 </launch>

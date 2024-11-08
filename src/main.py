@@ -214,7 +214,7 @@ class voiceSub():
         #     elif volume >= 90:
         #         pub_msg_state.data = 4
         #     self.publish_state(pub_msg_state)
-        if INTERACTING_FLAG == True and volume > 70 and 1 <= CURRENT_UMORU_STATE <= 3:
+        if INTERACTING_FLAG == True and volume > 45 and 1 <= CURRENT_UMORU_STATE <= 3:
             pub_msg_state.data = min(CURRENT_UMORU_STATE + 1, 5)
             pub_msg_change_trigger.data = "voice"
             self.publish_state(pub_msg_state)
@@ -430,9 +430,9 @@ class umoruStateController():
                 if change_trigger == "inflatable":
                     self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-nukumori.wav")
                 elif change_trigger == "voice":
-                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav")
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/munyamunya.wav")
                 elif change_trigger == "time":
-                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-iinioi.wav")
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/nozoki.wav")
                 # self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav",
                 #                                      "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav",
                 #                                      "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-iinioi.wav"]))
@@ -443,6 +443,16 @@ class umoruStateController():
                 pub_msg_eye_status.data = 1
                 pub_msg_demo_status.data = 1
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
+                if change_trigger == "inflatable":
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/hug_new_voice.wav")
+                elif change_trigger == "voice":
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav")
+                elif change_trigger == "time":
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/mezame.wav")
+                # self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav",
+                #                                      "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav",
+                #                                      "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-iinioi.wav"])
+                time.sleep(4.0)
                 self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-kokyu-fukkatsu.wav")
                 print("=============== state = 3 (breathing start)  ========================")
             elif CURRENT_UMORU_STATE == 4:
@@ -451,6 +461,16 @@ class umoruStateController():
                 pub_msg_demo_status.data = 1
                 pub_msg_eye_status.data = 1
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
+                if change_trigger == "inflatable":
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-nukumori.wav")
+                elif change_trigger == "voice":
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav")
+                elif change_trigger == "time":
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/body_moving.wav")
+                # self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav",
+                #                                      "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav",
+                #                                      "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/b.wav"])
+                time.sleep(4.0)
                 self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-hug-fukkatsu.wav")
                 if USE_ARM == True:
                     # arm_client.reset_pose()
