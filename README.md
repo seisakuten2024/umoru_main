@@ -39,6 +39,29 @@ USBハブはバスパワーを2つつかう。
 
 
 # トラブルシューティング
+## 何かが通信落ちてないか不安
+- audioが取れているか
+```
+rostopic echo /audio_volume
+```
+- カメラが見えているか、顔認識ができているか不安
+rvizを確認する
+/camera/color/face_pose_estimation/output/vizのimage(compressed)を選択して、顔認識されているか、カメラが見えているかを確認する
+
+もしくは
+```
+rostopic echo /camera/color/face_pose_estimation/output/skeletons
+```
+をする
+
+- arduinoが見えているか
+```
+rostopic echo /sensor
+```
+
+- 腕が大丈夫か
+main.pyを実行して、動いていないならトラブルシューティングへ
+
 ## カメラが動かない
 rvizを確認する
 /camera/color/face_pose_estimation/output/vizのimage(compressed)を選択して、顔認識されているか、カメラが見えているかを確認する
@@ -56,6 +79,9 @@ ls /dev/umoru*
 をして /dev/umoru_rarm, /dev/umoru_larmがあるかをチェックする。
 もしあるのに、roslaunchでエラーが出ている or 腕が動かない場合は、
 腕の電源ケーブルを抜き差ししてkondoのブザー音がなったらもう一度launchを立ち上げ直す
+
+## どうしても腕が動かない、故障したから腕なしで展示したい
+main.py の `USE_ARM`というグローバル関数を`False`に設定する。
 
 ## 瞬きが両目でずれている
 umoru_rosserial.launchを立ち上げ直す
