@@ -60,3 +60,10 @@ ls /dev/umoru*
 ## 瞬きが両目でずれている
 umoru_rosserial.launchを立ち上げ直す
 
+## マイクが認識されてない
+マイクのデバイスを差し直す。設定からマイクが反応しているかを見る。（functionキーでマイクを切ったりしていないか？）\\
+もし設定では反応しているのに、プログラムで取れてなさそうな時\\
+```
+rostopic echo /audio_volume
+```
+これがpublishされていなかったら、roslaunchを立ち上げ直す
