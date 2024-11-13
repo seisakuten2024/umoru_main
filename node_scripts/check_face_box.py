@@ -12,7 +12,8 @@ class PointCloudChecker:
         rospy.Subscriber('/extract_indices/output', PointCloud2, self.callback)
 
     def callback(self, msg):
-        is_large = len(msg.data) > 5000
+        rospy.loginfo("Number of points {}".format(len(msg.data)))
+        is_large = len(msg.data) > 10000
         self.publisher.publish(Bool(data=is_large))
 
 if __name__ == '__main__':
