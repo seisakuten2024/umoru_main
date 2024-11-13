@@ -1,7 +1,6 @@
 #!/usr/bin/env python3.8
 import rospy
 import time
-from collections import deque
 # import module
 from std_msgs.msg import String
 from std_msgs.msg import Bool
@@ -40,18 +39,17 @@ INTERACTING_FLAG = False
 FACE_FIND_FLAG = False
 TIME_CONTROLLER_LIST = []
 LAST_TIME = None
-USE_ARM = False
+USE_ARM = True
 
 class startAndEndFlag():
     """
     interactionの始まりを規定するクラス
     """
     def __init__(self):
-        self.history = deque(maxlen=5)
         print("init start and end flag")
-        # self.sub = rospy.Subscriber("/camera/color/face_pose_estimation/output/skeleton", HumanSkeletonArray, self.callback, queue_size=3)
+        self.sub = rospy.Subscriber("/camera/color/face_pose_estimation/output/skeleton", HumanSkeletonArray, self.callback, queue_size=3)
         self.sub_emergency = rospy.Subscriber("/if_camera_doesnot_work", Bool, self.callback_for_emergency)
-        self.sub_point_cloud = rospy.Subscriber("/point_cloud_check", Bool, self.callback_point_cloud, queue_size=3)
+        self.sub_
         self.pub = rospy.Publisher('/umoru_state', Int16, queue_size=10)
         self.pub_change_trigger = rospy.Publisher('/change_trigger', String, queue_size=10)
         self.pub_demo = rospy.Publisher('/demo_status', Bool, queue_size=10)
@@ -69,53 +67,13 @@ class startAndEndFlag():
         skeletons = data.skeletons
         # もし体験中じゃない かつ 前回の体験から10秒以上経過しているとき
         if INTERACTING_FLAG == False and (LAST_TIME == None or rospy.get_time() - LAST_TIME >= 10):
-            if len(skeletons) == 0:
+            if len(skeletons) == 0 or :
                 # 顔が見えない場合
                 FACE_FIND_FLAG = False
             elif len(skeletons) != 0:
                 # 顔が見える場合
                 if FACE_FIND_FLAG == True:
                     if rospy.get_time() - self.face_appeared_time >= 3:
-                        # もし顔が見えてから3秒経過した場合、体験スタート
-                        INTERACTING_FLAG = True
-                        print("================= 1. Interaction Start (by camera)  ======================")
-                        TIME_CONTROLLER_LIST = []
-                        # TIME_CONTROLLER_LIST.append(rospy.get_time())
-                        # pub_msg_state.data = 1
-                        # self.publish(pub_msg_state)
-                        pub_msg_change_trigger.data = "face"
-                        self.publish_change_trigger(pub_msg_change_trigger)
-                        FACE_FIND_FLAG = False
-                        pub_msg_demo_status.data = 0
-                        self.publish_demo(pub_msg_demo_status)
-                else:
-                    # 顔が始めて見えたとき、その時刻を記録する
-                    self.face_appeared_time = rospy.get_time()
-                    FACE_FIND_FLAG = True
-        rospy.sleep(0.05)
-
-    def callback_point_cloud(self, data):
-        global FACE_FIND_FLAG
-        global INTERACTING_FLAG
-        global TIME_CONTROLLER_LIST
-        global LAST_TIME
-        pub_msg_state = Int16()
-        pub_msg_demo_status = Bool()
-        pub_msg_change_trigger = String()
-        face_appear = data.data
-        # もし体験中じゃない かつ 前回の体験から10秒以上経過しているとき
-        self.history.append(face_appear)
-        ratio = np.mean(np.array(self.history))
-        rospy.loginfo("ratio = {}".format(ratio))
-        if INTERACTING_FLAG == False and (LAST_TIME == None or rospy.get_time() - LAST_TIME >= 10):
-            if ratio < 0.2:
-                # 顔が見えない場合
-                FACE_FIND_FLAG = False
-            elif face_appear == True:
-                print("-------------------------------- face appeared =================================")
-                # 顔が見える場合
-                if FACE_FIND_FLAG == True:
-                    if rospy.get_time() - self.face_appeared_time >= 1:
                         # もし顔が見えてから3秒経過した場合、体験スタート
                         INTERACTING_FLAG = True
                         print("================= 1. Interaction Start (by camera)  ======================")
@@ -257,7 +215,7 @@ class voiceSub():
         #     elif volume >= 90:
         #         pub_msg_state.data = 4
         #     self.publish_state(pub_msg_state)
-        if INTERACTING_FLAG == True and volume > 70 and 1 <= CURRENT_UMORU_STATE <= 3:
+        if INTERACTING_FLAG == True and volume > 45 and 1 <= CURRENT_UMORU_STATE <= 3:
             pub_msg_state.data = min(CURRENT_UMORU_STATE + 1, 5)
             pub_msg_change_trigger.data = "voice"
             self.publish_state(pub_msg_state)

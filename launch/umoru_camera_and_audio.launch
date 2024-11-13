@@ -20,11 +20,11 @@
         args="standalone jsk_pcl/AttentionClipper">
     <remap from="~input/points" to="$(arg INPUT_CLOUD)" />
     <rosparam>
-      initial_pos: [0.0, 0.0, 0.4]
+      initial_pos: [0.0, 0.05, 0.30]
       initial_rot: [0, 0, 0]
-      dimension_x: 0.1
-      dimension_y: 0.1
-      dimension_z: 0.1
+      dimension_x: 0.05
+      dimension_y: 0.05
+      dimension_z: 0.2
       frame_id: camera_color_optical_frame
     </rosparam>
   </node>
@@ -36,7 +36,8 @@
   </node>    
 
   <node name="check_face_box"
-        pkg="umoru_main" type="check_face_box.py">
+        pkg="umoru_main" type="check_face_box.py"
+	output="screen" >
   </node>    
     
 
