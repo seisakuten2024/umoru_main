@@ -40,7 +40,8 @@ INTERACTING_FLAG = False
 FACE_FIND_FLAG = False
 TIME_CONTROLLER_LIST = []
 LAST_TIME = None
-USE_ARM = False
+USE_ARM = True
+JP_flag = False
 
 class startAndEndFlag():
     """
@@ -462,7 +463,10 @@ class umoruStateController():
                 pub_msg_eye_status.data = 3
                 pub_msg_demo_status.data = 0
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
-                self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-first-phrase.wav")
+                if(JP_flag):
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-first-phrase.wav")
+                else:
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/en_version/en_umoru-first-phrase.wav")
                 print("=============== state = 1 (heart appeared) ========================")
             elif CURRENT_UMORU_STATE == 2:
                 pub_msg_heart_pulse.data = 1
@@ -471,11 +475,20 @@ class umoruStateController():
                 pub_msg_demo_status.data = 0
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
                 if change_trigger == "inflatable":
-                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-nukumori.wav")
+                    if(JP_flag):
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-nukumori.wav")
+                    else:
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/en_version/en_umoru-nukumori.wav")
                 elif change_trigger == "voice":
-                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/munyamunya.wav")
+                    if(JP_flag):
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/munyamunya.wav")
+                    else:
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/en_version/en_munyamunya.wav")
                 elif change_trigger == "time":
-                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/nozoki.wav")
+                    if(JP_flag):
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/nozoki.wav")
+                    else:
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/en_version/en_nozoki.wav")
                 # self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav",
                 #                                      "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav",
                 #                                      "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-iinioi.wav"]))
@@ -487,16 +500,28 @@ class umoruStateController():
                 pub_msg_demo_status.data = 1
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
                 if change_trigger == "inflatable":
-                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/hug_new_voice.wav")
+                    if(JP_flag):
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/hug_new_voice.wav")
+                    else:
+                        self.qplay_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/en_version/en_hug_new_voice.wav")
                 elif change_trigger == "voice":
-                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav")
+                    if(JP_flag):
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav")
+                    else:
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/en_version/en_umoru-yobimashitaka.wav")
                 elif change_trigger == "time":
-                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/mezame.wav")
+                    if(JP_flag):
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/mezame.wav")
+                    else:
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/en_version/en_mezame.wav")
                 # self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav",
                 #                                      "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav",
                 #                                      "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-iinioi.wav"])
                 time.sleep(4.0)
-                self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-kokyu-fukkatsu.wav")
+                if(JP_flag):
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-kokyu-fukkatsu.wav")
+                else:
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/en_version/en_umoru-kokyu-fukkatsu.wav")
                 print("=============== state = 3 (breathing start)  ========================")
             elif CURRENT_UMORU_STATE == 4:
                 pub_msg_heart_pulse.data = 0.6
@@ -505,16 +530,28 @@ class umoruStateController():
                 pub_msg_eye_status.data = 1
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
                 if change_trigger == "inflatable":
-                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-nukumori.wav")
+                    if(JP_flag):
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-nukumori.wav")
+                    else:
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/en_version/en_umoru-nukumori.wav")
                 elif change_trigger == "voice":
-                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav")
+                    if(JP_flag):
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav")
+                    else:
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/en_version/en_umoru-bikkuri.wav")
                 elif change_trigger == "time":
-                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/body_moving.wav")
+                    if(JP_flag):
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/body_moving.wav")
+                    else:
+                        self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/en_version/en_body_moving.wav")
                 # self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav",
                 #                                      "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav",
                 #                                      "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/b.wav"])
                 time.sleep(4.0)
-                self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-hug-fukkatsu.wav")
+                if(JP_flag):
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-hug-fukkatsu.wav")
+                else:
+                    self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/en_version/en_umoru-hug-fukkatsu.wav")
                 if USE_ARM == True:
                     # arm_client.reset_pose()
                     # arm_client.hug()
@@ -526,8 +563,12 @@ class umoruStateController():
                 pub_msg_heart_color.data = [0.9,0,0]
                 pub_msg_demo_status.data = 1
                 pub_msg_eye_status.data = 1
-                self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-thankyou-pattern1.wav",
-                                                     "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-thankyou-pattern2.wav"]))
+                if(JP_flag):
+                    self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-thankyou-pattern1.wav",
+                                                         "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-thankyou-pattern2.wav"]))
+                else:
+                    self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/en_version/en_umoru-thankyou-pattern1.wav",
+                                                         "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/en_version/en_umoru-thankyou-pattern2.wav"]))
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
                 if USE_ARM == True:
                     # arm_client.reset_pose()
@@ -579,7 +620,7 @@ class umoruStateController():
                 pub_msg_eye_status.data = 3
                 pub_msg_demo_status.data = 0
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
-                self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-first-phrase.wav")
+                # self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-first-phrase.wav")
                 time_to_sleep = 10
                 print("=============== state = 1 (heart appeared) ========================")
             elif CURRENT_UMORU_STATE == 2 and 10 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]:
@@ -589,7 +630,7 @@ class umoruStateController():
                 pub_msg_eye_status.data = 3
                 pub_msg_demo_status.data = 0
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
-                self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-iinioi.wav"]))
+                # self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-yobimashitaka.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-bikkuri.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-iinioi.wav"]))
                 print("=============== state = 2 ========================")
             elif (CURRENT_UMORU_STATE == 3 and 10 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]):
                 CURRENT_UMORU_STATE = 3
@@ -597,12 +638,12 @@ class umoruStateController():
                 pub_msg_heart_color.data = [0.9,0.3,0.5]
                 pub_msg_eye_status.data = 1
                 pub_msg_demo_status.data = 1
-                self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-nukumori.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-kodou.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-kokyu-fukkatsu.wav"]))
+                # self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-nukumori.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-kodou.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-kokyu-fukkatsu.wav"]))
                 TIME_CONTROLLER_LIST.append(rospy.get_time())
                 print("=============== state = 3 ========================")
                 print("=============== 呼吸スタート =====================")
             elif (CURRENT_UMORU_STATE == 4 and 10 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]):
-                self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-hug-fukkatsu.wav")
+                # self.play_sound_async("/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-hug-fukkatsu.wav")
                 if USE_ARM == True:
                     # arm_client.reset_pose()
                     # arm_client.hug()
@@ -619,7 +660,7 @@ class umoruStateController():
             elif CURRENT_UMORU_STATE == 5 and 10 < rospy.get_time() - TIME_CONTROLLER_LIST[-1]:
                 CURRENT_UMORU_STATE = 5
                 print("ここにはいってほしいーーーーー")
-                self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-thankyou-pattern1.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-thankyou-pattern2.wav"]))
+                # self.play_sound_async(random.choice(["/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-thankyou-pattern1.wav", "/home/leus/seisakuten_ws/src/umoru_main/src/sounds/umoru-thankyou-pattern2.wav"]))
                 if USE_ARM == True:
                     # arm_client.reset_pose()
                     # arm_client.init_pose()
